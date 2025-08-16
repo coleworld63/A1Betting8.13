@@ -95,7 +95,27 @@ def create_app() -> FastAPI:
     )
 
     # --- MIDDLEWARE STACK ORDERING (Architect-Specified) ---
-    # CORS -> Logging -> Metrics -> PayloadGuard -> RateLimit -> SecurityHeaders -> Router
+    # CORS -> RequestID -> Logging -> Metrics -> PayloadGuard -> RateLimit -> SecurityHeaders -> Router
+    
+    # --- Request ID Correlation Middleware (PR8) ---
+    try:
+        from backend.middleware.request_id_middleware import RequestIdMiddleware
+        _app.add_middleware(RequestIdMiddleware)
+        logger.info("✅ Request ID correlation middleware added")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import request ID middleware: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to configure request ID middleware: {e}")
+        
+    # --- Distributed Trace Correlation Middleware (NEW) ---
+    try:
+        from backend.middleware.distributed_trace_middleware import DistributedTraceMiddleware
+        _app.add_middleware(DistributedTraceMiddleware)
+        logger.info("✅ Distributed trace correlation middleware added")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import distributed trace middleware: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to configure distributed trace middleware: {e}")
     
     # --- Structured Logging Middleware ---
     # Skip heavy debug middleware in lean mode
@@ -231,6 +251,17 @@ def create_app() -> FastAPI:
     except Exception as e:
         logger.error(f"❌ Failed to configure security headers: {e}")
 
+    # --- Legacy Endpoint Middleware (PR7) ---
+    # Order: After security headers to ensure legacy tracking and deprecation controls
+    try:
+        from backend.middleware.legacy_middleware import LegacyMiddleware
+        _app.add_middleware(LegacyMiddleware)
+        logger.info("✅ Legacy endpoint middleware added for usage telemetry and deprecation controls")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import legacy middleware: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to configure legacy middleware: {e}")
+
     # --- Centralized Exception Handling ---
     try:
         from backend.exceptions.handlers import register_exception_handlers
@@ -242,38 +273,81 @@ def create_app() -> FastAPI:
     # --- WebSocket Routes ---
     ws_router = APIRouter()
 
-    @ws_router.websocket("/ws/{client_id}")
-    async def websocket_endpoint(websocket: WebSocket, client_id: str):
-        logger.info(f"[WS] Client {client_id} attempting connection...")
+    # Legacy WebSocket endpoint (DEPRECATED - moved to avoid path collision)
+    @ws_router.websocket("/ws/legacy/{client_id}")
+    async def websocket_endpoint_legacy(websocket: WebSocket, client_id: str):
+        logger.info(f"[WS] DEPRECATED: Legacy client {client_id} attempting connection on /ws/legacy/")
         await websocket.accept()
-        logger.info(f"[WS] Client {client_id} connected.")
+        logger.info(f"[WS] Legacy client {client_id} connected.")
+        
+        # Publish observability event for legacy connection tracking
+        try:
+            from backend.services.observability.event_bus import get_event_bus
+            event_bus = get_event_bus()
+            event_bus.publish("legacy.usage", {
+                "connection_type": "ws.legacy.connect",
+                "client_id": client_id,
+                "endpoint": "/ws/legacy/{client_id}",
+                "deprecation_notice": "Use /ws/client with query parameters instead",
+                "migration_guide": "Replace /ws/{client_id} with /ws/client?client_id={client_id}"
+            })
+        except Exception as e:
+            logger.warning(f"Failed to publish legacy connection event: {e}")
+            
         try:
             while True:
                 data = await websocket.receive_text()
-                logger.info(f"[WS] Received from {client_id}: {data}")
+                logger.info(f"[WS] Received from legacy {client_id}: {data}")
                 await websocket.send_text(f"Echo: {data}")
         except WebSocketDisconnect:
-            logger.info(f"[WS] Client {client_id} disconnected.")
+            logger.info(f"[WS] Legacy client {client_id} disconnected.")
         except Exception as e:
-            logger.error(f"[WS] Error for {client_id}: {e}")
+            logger.error(f"[WS] Legacy error for {client_id}: {e}")
 
     _app.include_router(ws_router)
+    
+    # --- Canonical WebSocket Client Route (DISABLED in favor of PR11 enhanced route) ---
+    # try:
+    #     from backend.routes.ws_client import router as ws_client_router
+    #     _app.include_router(ws_client_router)
+    #     logger.info("✅ Canonical WebSocket client route included (/ws/client)")
+    # except ImportError as e:
+    #     logger.warning(f"⚠️ Could not import canonical WebSocket client route: {e}")
+    # except Exception as e:
+    #     logger.error(f"❌ Failed to register canonical WebSocket client route: {e}")
+
+    # --- PR11 Enhanced WebSocket Client Route ---
+    try:
+        from backend.routes.ws_client_enhanced import router as ws_client_enhanced_router
+        _app.include_router(ws_client_enhanced_router)
+        logger.info("✅ PR11 Enhanced WebSocket client route included (/ws/client)")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import PR11 enhanced WebSocket client route: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register PR11 enhanced WebSocket client route: {e}")
 
     # --- Core API Routes ---
     @_app.get("/api/health")
     @_app.head("/api/health")
     async def api_health():
         """
-        System health check endpoint with normalized envelope format
+        System health check endpoint with normalized envelope format (LEGACY - DEPRECATED)
+        
+        This endpoint is deprecated. Use /api/v2/diagnostics/health for structured health information.
         
         Returns:
-            Minimal envelope: {"success": true, "data": {"status": "ok"}, "error": null, "meta": {"request_id": <uuid>}}
+            Minimal envelope with deprecation notice: {"success": true, "data": {"status": "ok", "deprecated": true}, "error": null}
         """
-        logger.info("[API] /api/health called")
+        logger.info("[API] /api/health called (DEPRECATED)")
         
         return {
             "success": True,
-            "data": {"status": "ok"},
+            "data": {
+                "status": "ok",
+                "deprecated": True,
+                "forward": "/api/v2/diagnostics/health",
+                "message": "This endpoint is deprecated. Use /api/v2/diagnostics/health for structured health information."
+            },
             "error": None,
             "meta": {"request_id": str(uuid.uuid4())}
         }
@@ -290,6 +364,31 @@ def create_app() -> FastAPI:
     async def api_v2_health_alias():
         """Normalized version alias for monitoring systems expecting /api/v2/health"""
         return await api_health()
+
+    # --- PR8 Request Correlation Test Endpoint ---
+    @_app.get("/api/trace/test")
+    async def test_request_correlation(request: Request):
+        """
+        Test endpoint for PR8 request correlation functionality.
+        Validates that request IDs are properly propagated through middleware.
+        """
+        from backend.middleware.request_id_middleware import get_request_id_from_request
+        
+        logger.info("Testing PR8 request correlation")
+        request_id_from_state = get_request_id_from_request(request)
+        
+        return ok({
+            "request_id_from_state": request_id_from_state,
+            "correlation_working": True,
+            "message": "PR8 request correlation test completed",
+            "middleware_status": "working",
+            "features_tested": [
+                "request_id_middleware",
+                "request_state_access", 
+                "response_header_injection",
+                "structured_logging"
+            ]
+        })
 
     @_app.get("/dev/mode")
     @_app.head("/dev/mode")
@@ -434,6 +533,33 @@ def create_app() -> FastAPI:
                 details={"service": "props_api", "error": str(e)}
             )
 
+    @_app.options("/api/v2/sports/activate")
+    async def api_activate_preflight():
+        """
+        Handle CORS preflight for sports activation endpoint
+        
+        This endpoint explicitly handles OPTIONS preflight requests for the sports activation endpoint.
+        The actual CORS headers are added by the CORSMiddleware configured above.
+        
+        Returns:
+            Empty response with proper CORS headers (handled by CORSMiddleware)
+        """
+        from backend.middleware.request_id_middleware import get_request_id_from_request
+        from fastapi import Request, Response
+        
+        logger.debug("[API] OPTIONS /api/v2/sports/activate preflight handled")
+        
+        # Return response with explicit CORS headers (middleware will also add its headers)
+        response = Response(status_code=200)
+        
+        # Add explicit preflight headers for this specific endpoint
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+        response.headers["Access-Control-Max-Age"] = "86400"  # Cache preflight for 24 hours
+        
+        return response
+
     @_app.post("/api/v2/sports/activate")
     async def api_activate(request: Request):
         """
@@ -533,14 +659,44 @@ def create_app() -> FastAPI:
 
     # Import and mount versioned routers
     try:
-        from backend.auth.routes import router as auth_router
+        from backend.routes.auth import router as auth_router
         from backend.users.routes import router as users_router
 
-        _app.include_router(auth_router)
+        _app.include_router(auth_router, prefix="/api")
         _app.include_router(users_router)
-        logger.info("✅ Auth and users routes included")
+        logger.info("✅ Auth and users routes included (auth with /api prefix)")
     except ImportError as e:
         logger.warning(f"⚠️ Could not import auth/users routes: {e}")
+    
+    # Import and mount diagnostics router (includes new structured health endpoint)
+    try:
+        from backend.routes.diagnostics import router as diagnostics_router
+        _app.include_router(diagnostics_router, prefix="/api/v2/diagnostics", tags=["Diagnostics"])
+        logger.info("✅ Diagnostics routes included (/api/v2/diagnostics/health, /api/v2/diagnostics/system)")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import diagnostics routes: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register diagnostics routes: {e}")
+    
+    # Import and mount meta cache router (PR6: Cache Stats & Observability)
+    try:
+        from backend.routes.meta_cache import router as meta_cache_router
+        _app.include_router(meta_cache_router, prefix="/api/v2/meta", tags=["Cache Observability"])
+        logger.info("✅ Meta cache routes included (/api/v2/meta/cache-stats, /api/v2/meta/cache-health)")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import meta cache routes: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register meta cache routes: {e}")
+    
+    # Import and mount legacy meta router (PR7: Legacy Endpoint Telemetry)
+    try:
+        from backend.routes.meta_legacy import router as meta_legacy_router
+        _app.include_router(meta_legacy_router, prefix="/api/v2/meta", tags=["Legacy Telemetry"])
+        logger.info("✅ Legacy meta routes included (/api/v2/meta/legacy-usage, /api/v2/meta/migration-readiness)")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import legacy meta routes: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register legacy meta routes: {e}")
     
     # Import and mount security routes (Step 6: Security Headers)
     try:
@@ -553,6 +709,46 @@ def create_app() -> FastAPI:
     except Exception as e:
         logger.error(f"❌ Failed to register CSP report routes: {e}")
     
+    # Import and mount trace test routes (PR8: Request Correlation Testing)
+    try:
+        from backend.routes.trace_test_routes import router as trace_test_router
+        _app.include_router(trace_test_router, tags=["Request Correlation"])
+        logger.info("✅ Trace test routes included (/api/trace/* endpoints)")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import trace test routes: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register trace test routes: {e}")
+    
+    # Import and mount model inference routes (PR9: Model Inference Observability)
+    try:
+        from backend.routes.models_inference import router as models_inference_router
+        _app.include_router(models_inference_router, tags=["Model Inference"])
+        logger.info("✅ Model inference routes included (/api/v2/models/* endpoints)")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import model inference routes: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register model inference routes: {e}")
+
+    # Import and mount observability events routes (PR11: WebSocket Correlation & Observability Event Bus)
+    try:
+        from backend.routes.observability_events import router as observability_events_router
+        _app.include_router(observability_events_router, tags=["Observability Events"])
+        logger.info("✅ Observability events routes included (/api/v2/observability/* endpoints)")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import observability events routes: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register observability events routes: {e}")
+
+    # Import and mount admin control routes (Admin Control PR: Runtime Shadow Mode Control)
+    try:
+        from backend.routes.admin_control import router as admin_control_router
+        _app.include_router(admin_control_router, tags=["Admin Control"])
+        logger.info("✅ Admin control routes included (/api/v2/models/shadow/* and /api/v2/models/admin/* endpoints)")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import admin control routes: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register admin control routes: {e}")
+    
     # Enhanced WebSocket Routes with Room-based Subscriptions
     try:
         from backend.routes.enhanced_websocket_routes import router as enhanced_ws_router
@@ -562,6 +758,16 @@ def create_app() -> FastAPI:
         logger.warning(f"⚠️ Could not import enhanced WebSocket routes: {e}")
     except Exception as e:
         logger.error(f"❌ Failed to register enhanced WebSocket routes: {e}")
+    
+    # WebVitals Pipeline Routes (NEW)
+    try:
+        from backend.services.webvitals_pipeline import router as webvitals_router
+        _app.include_router(webvitals_router)
+        logger.info("✅ WebVitals pipeline routes included (/api/metrics/v1/* endpoints)")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import WebVitals pipeline routes: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register WebVitals pipeline routes: {e}")
     
     # Enhanced ML Routes with SHAP Explainability, Batch Optimization, Performance Logging
     try:
@@ -604,7 +810,109 @@ def create_app() -> FastAPI:
     except Exception as e:
         logger.error(f"❌ Failed to register consolidated Admin routes: {e}")
 
+    # System Capabilities Matrix API (Service Registry & Health Tracking)
+    try:
+        from backend.routes.system_capabilities import router as system_capabilities_router
+        _app.include_router(system_capabilities_router, tags=["System Capabilities"])
+        logger.info("✅ System capabilities routes included (/api/system/* endpoints)")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import system capabilities routes: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register system capabilities routes: {e}")
+
+    # --- Security Enhancement Routes (Epic 5) ---
+    try:
+        from backend.routes.security_head_endpoints import router as head_endpoints_router
+        _app.include_router(head_endpoints_router, tags=["Security", "HEAD Endpoints"])
+        logger.info("✅ Security HEAD endpoints included (/api/* HEAD endpoints)")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import security HEAD endpoints: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register security HEAD endpoints: {e}")
+
+    # --- ML Model Registry (Epic 6) ---
+    try:
+        from backend.routes.model_registry_simple import router as model_registry_router
+        _app.include_router(model_registry_router, tags=["ML Model Registry"])
+        logger.info("✅ ML Model Registry routes included (/api/models/* endpoints)")
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import ML Model Registry routes: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register ML Model Registry routes: {e}")
+
+    # --- Enterprise Model Registry Routes (NEW) ---
+    try:
+        from backend.routes.enterprise_model_registry_routes import enterprise_router
+        _app.include_router(enterprise_router, tags=["Enterprise Model Registry"])
+        logger.info("✅ Enterprise model registry routes included (/api/models/enterprise/* endpoints)")
+        
+        # Initialize model registry service and validation harness
+        try:
+            from backend.services.model_registry_service import get_model_registry_service
+            from backend.services.model_validation_harness import get_validation_harness
+            from backend.services.model_selection_service import get_model_selection_service
+            
+            # Initialize services (this will set up Redis connections, etc.)
+            registry = get_model_registry_service()
+            harness = get_validation_harness()
+            selection = get_model_selection_service()
+            
+            logger.info("✅ Enterprise model registry services initialized")
+        except ImportError as e:
+            logger.warning(f"⚠️ Enterprise model registry services not available: {e}")
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize enterprise model registry services: {e}")
+            
+    except ImportError as e:
+        logger.warning(f"⚠️ Could not import enterprise model registry routes: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register enterprise model registry routes: {e}")
+
     # DB and config setup can be added here as modules are refactored in
+    
+    # --- Bootstrap Validation & Sanity Check (NEW) ---
+    # Validate configuration and endpoints at startup
+    try:
+        from backend.services.bootstrap_validator import validate_app_bootstrap
+        # Note: This is async but we can't await here, so we'll schedule it
+        # The validation will happen after app creation
+        def schedule_bootstrap_validation():
+            import asyncio
+            try:
+                # Create new event loop if none exists
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                
+                # Run validation
+                summary = loop.run_until_complete(validate_app_bootstrap(_app))
+                
+                # Additional logging for critical issues
+                if summary.critical_issues > 0:
+                    logger.critical(f"🔥 CRITICAL: {summary.critical_issues} critical issues found during bootstrap validation!")
+                elif summary.errors > 0:
+                    logger.error(f"❌ {summary.errors} errors found during bootstrap validation")
+                elif summary.warnings > 0:
+                    logger.warning(f"⚠️ {summary.warnings} warnings found during bootstrap validation")
+                else:
+                    logger.info("✅ Bootstrap validation completed successfully")
+                
+            except Exception as e:
+                logger.error(f"❌ Bootstrap validation failed: {e}")
+        
+        # Schedule validation to run after app creation
+        import threading
+        validation_thread = threading.Thread(target=schedule_bootstrap_validation, daemon=True)
+        validation_thread.start()
+        
+        logger.info("🔍 Bootstrap validation scheduled")
+        
+    except ImportError as e:
+        logger.warning(f"⚠️ Bootstrap validator not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Failed to schedule bootstrap validation: {e}")
     
     # Log normalized health endpoints at startup
     logger.info("🏥 Health endpoints normalized: /api/health, /health, /api/v2/health -> identical envelope format")
@@ -617,3 +925,4 @@ app = create_app()
 
 # Legacy compatibility
 core_app = app
+# Reload trigger

@@ -6,12 +6,39 @@
  * features remain accessible and performant.
  */
 
+import { _eventBus } from '../core/EventBus';
+
 interface CoreFunctionValidationResult {
   isValid: boolean;
   functionName: string;
   executionTime: number;
   error?: string;
   warning?: string;
+}
+
+interface ValidatorEvent {
+  event_type: 'validator.cycle' | 'validator.cycle.fail' | 'validator.bootstrap' | 'validator.performance';
+  phase: string;
+  status: 'pass' | 'fail' | 'warn' | 'timeout';
+  attempt?: number;
+  duration_ms: number;
+  timestamp: number;
+  details?: {
+    error?: string;
+    warning?: string;
+    functionName?: string;
+    performanceImpact?: boolean;
+  };
+}
+
+interface HealthSnapshot {
+  status: 'healthy' | 'degraded' | 'failed';
+  lastSuccessTs: number;
+  lastAttemptTs: number;
+  consecutiveFailures: number;
+  totalCycles: number;
+  avgResponseTime: number;
+  validationResults: CoreFunctionValidationResult[];
 }
 
 interface CoreFunctionalityReport {
@@ -31,6 +58,102 @@ class CoreFunctionalityValidator {
   private validationInterval: NodeJS.Timeout | null = null;
   private isRunning = false;
   private performanceBaseline: PerformanceEntry[] = [];
+  
+  // Health snapshot tracking
+  private healthSnapshot: HealthSnapshot = {
+    status: 'healthy',
+    lastSuccessTs: 0,
+    lastAttemptTs: 0,
+    consecutiveFailures: 0,
+    totalCycles: 0,
+    avgResponseTime: 0,
+    validationResults: []
+  };
+  
+  // Performance tracking for observability
+  private responseTimes: number[] = [];
+  private maxResponseTimes = 50; // Keep last 50 response times for averaging
+
+  /**
+   * Emit validator event for observability
+   */
+  private emitValidatorEvent(eventData: Partial<ValidatorEvent>): void {
+    try {
+      const event: ValidatorEvent = {
+        event_type: 'validator.cycle',
+        phase: 'unknown',
+        status: 'pass',
+        duration_ms: 0,
+        timestamp: Date.now(),
+        ...eventData
+      };
+
+      _eventBus.emit('validator.event', event);
+      
+      // Also emit specific event type for targeted listeners
+      _eventBus.emit(event.event_type, event);
+      
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.debug('[CoreValidator] Event emitted:', event.event_type, event);
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.warn('[CoreValidator] Failed to emit event:', error);
+      }
+    }
+  }
+
+  /**
+   * Update health snapshot and expose to window for QA
+   */
+  private updateHealthSnapshot(
+    validationResults: CoreFunctionValidationResult[], 
+    overallStatus: 'PASSING' | 'WARNING' | 'FAILING',
+    cycleTime: number
+  ): void {
+    const now = Date.now();
+    const isSuccess = overallStatus === 'PASSING';
+    
+    this.healthSnapshot.lastAttemptTs = now;
+    this.healthSnapshot.totalCycles++;
+    this.healthSnapshot.validationResults = validationResults;
+    
+    if (isSuccess) {
+      this.healthSnapshot.lastSuccessTs = now;
+      this.healthSnapshot.consecutiveFailures = 0;
+      this.healthSnapshot.status = 'healthy';
+    } else {
+      this.healthSnapshot.consecutiveFailures++;
+      
+      // Implement hysteresis: require 3 consecutive failures before marking as failed
+      if (this.healthSnapshot.consecutiveFailures >= 3) {
+        this.healthSnapshot.status = 'failed';
+      } else if (this.healthSnapshot.consecutiveFailures >= 1 && overallStatus === 'FAILING') {
+        this.healthSnapshot.status = 'degraded';
+      }
+    }
+    
+    // Update average response time
+    this.responseTimes.push(cycleTime);
+    if (this.responseTimes.length > this.maxResponseTimes) {
+      this.responseTimes.shift();
+    }
+    this.healthSnapshot.avgResponseTime = this.responseTimes.reduce((a, b) => a + b, 0) / this.responseTimes.length;
+    
+    // Expose to window for automated QA harnesses
+    (window as typeof window & { __A1_VALIDATOR?: unknown }).__A1_VALIDATOR = {
+      status: this.healthSnapshot.status,
+      lastSuccessTs: this.healthSnapshot.lastSuccessTs,
+      lastAttemptTs: this.healthSnapshot.lastAttemptTs,
+      consecutiveFailures: this.healthSnapshot.consecutiveFailures,
+      totalCycles: this.healthSnapshot.totalCycles,
+      avgResponseTime: this.healthSnapshot.avgResponseTime,
+      // Include the full snapshot for advanced debugging
+      fullSnapshot: this.healthSnapshot
+    };
+  }
 
   /**
    * Core application functions that must remain unimpacted
@@ -52,6 +175,7 @@ class CoreFunctionalityValidator {
 
   /**
    * Initialize continuous validation without impacting performance
+   * Now waits for bootstrap completion before starting validation cycles
    */
   public startValidation(interval: number = 60000): void {
     if (this.isRunning) return;
@@ -59,14 +183,188 @@ class CoreFunctionalityValidator {
     this.isRunning = true;
     this.establishPerformanceBaseline();
 
-    // Use requestIdleCallback to avoid blocking main thread
-    this.validationInterval = setInterval(() => {
-      if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(() => this.runValidationCycle());
-      } else {
-        setTimeout(() => this.runValidationCycle(), 0);
+    // Wait for bootstrap completion before starting validation cycles
+    this.waitForBootstrapCompletion().then(() => {
+      // Use requestIdleCallback to avoid blocking main thread
+      this.validationInterval = setInterval(() => {
+        if ('requestIdleCallback' in window) {
+          window.requestIdleCallback(() => this.runValidationCycle());
+        } else {
+          setTimeout(() => this.runValidationCycle(), 0);
+        }
+      }, interval);
+    });
+  }
+
+  /**
+   * Wait for bootstrap completion using MutationObserver + adaptive backoff
+   * @private
+   */
+  private async waitForBootstrapCompletion(timeout: number = 10000): Promise<void> {
+    return new Promise((resolve) => {
+      const startTime = Date.now();
+      let observer: MutationObserver | null = null;
+      let pollInterval: NodeJS.Timeout | null = null;
+      let pollCount = 0;
+      const maxPollCount = 5; // Limit aggressive polling
+
+      // Clean up function
+      const cleanup = () => {
+        if (observer) {
+          observer.disconnect();
+          observer = null;
+        }
+        if (pollInterval) {
+          clearTimeout(pollInterval);
+          pollInterval = null;
+        }
+      };
+
+      // Success handler
+      const onBootstrapComplete = (reason: string) => {
+        cleanup();
+        
+        // Emit bootstrap complete event
+        this.emitValidatorEvent({
+          event_type: 'validator.bootstrap',
+          phase: 'complete',
+          status: 'pass',
+          duration_ms: Date.now() - startTime,
+          details: { functionName: reason }
+        });
+        
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.log(`[CoreFunctionalityValidator] ${reason}, starting validation`);
+        }
+        resolve();
+      };
+
+      // Timeout handler
+      const onTimeout = () => {
+        cleanup();
+        
+        // Emit bootstrap timeout event (not necessarily a failure)
+        this.emitValidatorEvent({
+          event_type: 'validator.bootstrap',
+          phase: 'timeout',
+          status: 'warn',
+          duration_ms: timeout
+        });
+        
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.info('[CoreFunctionalityValidator] Bootstrap detection timeout, starting validation (this is normal)');
+        }
+        resolve();
+      };
+
+      // Check if already complete
+      const isBootstrapComplete = (): string | null => {
+        // Check for navigation elements
+        const navElements = document.querySelectorAll(
+          '[data-nav-root], [data-testid*="nav"], [role="navigation"], nav, #app-nav'
+        );
+        if (navElements.length > 0) {
+          return 'Navigation elements found';
+        }
+
+        // Check if app root is mounted with content
+        const appRoot = document.querySelector('#root [data-testid="app"], #root .app, main, [role="main"]');
+        if (appRoot && appRoot.children.length > 0) {
+          return 'App root mounted with content';
+        }
+
+        // Check for React elements
+        const reactElements = document.querySelectorAll('[data-reactroot], [data-testid]');
+        if (reactElements.length > 3) { // More than just basic elements
+          return 'React components rendered';
+        }
+
+        return null;
+      };
+
+      // Check immediate completion
+      const immediateCheck = isBootstrapComplete();
+      if (immediateCheck) {
+        onBootstrapComplete(immediateCheck);
+        return;
       }
-    }, interval);
+
+      // Set up timeout
+      const timeoutId = setTimeout(onTimeout, timeout);
+
+      // Option 1: Listen for custom bootstrap event
+      const handleBootstrapEvent = () => {
+        clearTimeout(timeoutId);
+        onBootstrapComplete('Bootstrap event received');
+      };
+      document.addEventListener('a1:bootstrap-complete', handleBootstrapEvent, { once: true });
+
+      // Option 2: MutationObserver for DOM changes (event-driven, efficient)
+      try {
+        observer = new MutationObserver((mutations) => {
+          // Only check after significant DOM changes
+          const significantChange = mutations.some(mutation => 
+            mutation.addedNodes.length > 0 || 
+            (mutation.type === 'attributes' && mutation.attributeName === 'data-testid')
+          );
+
+          if (significantChange) {
+            const reason = isBootstrapComplete();
+            if (reason) {
+              clearTimeout(timeoutId);
+              document.removeEventListener('a1:bootstrap-complete', handleBootstrapEvent);
+              onBootstrapComplete(reason);
+            }
+          }
+        });
+
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['data-testid', 'data-nav-root', 'role']
+        });
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.warn('[CoreFunctionalityValidator] MutationObserver setup failed:', error);
+        }
+      }
+
+      // Option 3: Adaptive backoff polling (fallback, less aggressive)
+      const adaptivePoll = () => {
+        if (Date.now() - startTime > timeout) {
+          clearTimeout(timeoutId);
+          document.removeEventListener('a1:bootstrap-complete', handleBootstrapEvent);
+          onTimeout();
+          return;
+        }
+
+        pollCount++;
+        const reason = isBootstrapComplete();
+        if (reason) {
+          clearTimeout(timeoutId);
+          document.removeEventListener('a1:bootstrap-complete', handleBootstrapEvent);
+          onBootstrapComplete(reason);
+          return;
+        }
+
+        // Adaptive backoff: start at 250ms, increase exponentially, cap at 2000ms
+        let nextInterval = Math.min(250 * Math.pow(1.5, pollCount), 2000);
+        
+        // Stop aggressive polling after maxPollCount attempts
+        if (pollCount >= maxPollCount) {
+          nextInterval = 2000; // Switch to 2-second intervals
+        }
+
+        pollInterval = setTimeout(adaptivePoll, nextInterval);
+      };
+
+      // Start adaptive polling as fallback (less aggressive than before)
+      setTimeout(adaptivePoll, 250); // Start with 250ms delay instead of 100ms
+    });
   }
 
   /**
@@ -87,11 +385,44 @@ class CoreFunctionalityValidator {
     const startTime = performance.now();
     const validationResults: CoreFunctionValidationResult[] = [];
     
+    // Emit cycle start event
+    this.emitValidatorEvent({
+      event_type: 'validator.cycle',
+      phase: 'start',
+      status: 'pass',
+      duration_ms: 0
+    });
+    
     try {
       // Validate each core function with timeout protection
       for (const [functionName, validator] of Object.entries(this.coreFunctions)) {
         const result = await this.runValidationWithTimeout(functionName, validator, 5000);
         validationResults.push(result);
+        
+        // Emit individual function validation events
+        if (!result.isValid) {
+          this.emitValidatorEvent({
+            event_type: 'validator.cycle.fail',
+            phase: functionName,
+            status: 'fail',
+            duration_ms: result.executionTime,
+            details: {
+              error: result.error,
+              functionName: result.functionName
+            }
+          });
+        } else if (result.warning) {
+          this.emitValidatorEvent({
+            event_type: 'validator.cycle',
+            phase: functionName,
+            status: 'warn',
+            duration_ms: result.executionTime,
+            details: {
+              warning: result.warning,
+              functionName: result.functionName
+            }
+          });
+        }
       }
 
       // Assess performance impact
@@ -103,6 +434,7 @@ class CoreFunctionalityValidator {
       // Determine overall status
       const overallStatus = this.determineOverallStatus(validationResults, performanceImpact);
 
+      const cycleTime = performance.now() - startTime;
       const report: CoreFunctionalityReport = {
         timestamp: new Date(),
         overallStatus,
@@ -110,6 +442,20 @@ class CoreFunctionalityValidator {
         performanceImpact,
         recommendations
       };
+
+      // Update health snapshot and expose to window
+      this.updateHealthSnapshot(validationResults, overallStatus, cycleTime);
+
+      // Emit cycle complete event
+      this.emitValidatorEvent({
+        event_type: 'validator.cycle',
+        phase: 'complete',
+        status: overallStatus === 'PASSING' ? 'pass' : (overallStatus === 'WARNING' ? 'warn' : 'fail'),
+        duration_ms: cycleTime,
+        details: {
+          performanceImpact: performanceImpact.criticalPathBlocked
+        }
+      });
 
       // Log results in development mode only
       if (process.env.NODE_ENV === 'development') {
@@ -119,8 +465,26 @@ class CoreFunctionalityValidator {
       return report;
 
     } catch (error) {
+      const cycleTime = performance.now() - startTime;
+      
+      // Emit error event
+      this.emitValidatorEvent({
+        event_type: 'validator.cycle.fail',
+        phase: 'validation_cycle',
+        status: 'fail',
+        duration_ms: cycleTime,
+        details: {
+          error: error instanceof Error ? error.message : 'Unknown validation error'
+        }
+      });
+
+      // Update health snapshot with error
+      const errorReport = this.generateErrorReport(error);
+      this.updateHealthSnapshot(errorReport.validationResults, 'FAILING', cycleTime);
+
+      // eslint-disable-next-line no-console
       console.warn('[CoreFunctionalityValidator] Validation cycle error:', error);
-      return this.generateErrorReport(error);
+      return errorReport;
     }
   }
 
@@ -130,7 +494,7 @@ class CoreFunctionalityValidator {
   private async validateNavigation(): Promise<boolean> {
     try {
       // Check if React Router is functional
-      const currentPath = window.location.pathname;
+      const _currentPath = window.location.pathname;
       
       // Validate that navigation components can be accessed
       const navElements = document.querySelectorAll('[data-testid*="nav"], [role="navigation"], nav');
@@ -145,23 +509,32 @@ class CoreFunctionalityValidator {
 
       return true;
     } catch (error) {
-      console.warn('[CoreValidator] Navigation validation failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.warn('[CoreValidator] Navigation validation failed:', error);
+      }
       return false;
     }
   }
 
   /**
-   * Validate data fetching capabilities
+   * Health endpoint URL - updated to use new structured health endpoint
+   */
+  private static readonly HEALTH_ENDPOINT = '/api/v2/diagnostics/health';
+  private static readonly LEGACY_HEALTH_ENDPOINT = '/api/health';
+
+  /**
+   * Validate data fetching capabilities - uses new health endpoint with legacy fallback
    */
   private async validateDataFetching(): Promise<boolean> {
     try {
-      // Test basic fetch capability
-      const testUrl = '/api/health';
+      // Test new structured health endpoint first
+      let testUrl = CoreFunctionalityValidator.HEALTH_ENDPOINT;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
 
       try {
-        const response = await fetch(testUrl, {
+        const _response = await fetch(testUrl, {
           signal: controller.signal,
           method: 'GET'
         });
@@ -177,11 +550,41 @@ class CoreFunctionalityValidator {
           return true;
         }
         
-        // If it's a network error, that's still a functioning fetch
-        return true;
+        // Try legacy endpoint as fallback
+        try {
+          testUrl = CoreFunctionalityValidator.LEGACY_HEALTH_ENDPOINT;
+          const legacyController = new AbortController();
+          const legacyTimeoutId = setTimeout(() => legacyController.abort(), 3000);
+          
+          try {
+            const _legacyResponse = await fetch(testUrl, {
+              signal: legacyController.signal,
+              method: 'GET'
+            });
+            clearTimeout(legacyTimeoutId);
+            
+            // Log migration hint at info level only (will be removed in production builds)
+            if (process.env.NODE_ENV === 'development') {
+              // eslint-disable-next-line no-console
+              console.info('[CoreValidator] Using legacy health endpoint. Consider migrating to /api/v2/diagnostics/health');
+            }
+            return true;
+          } catch {
+            clearTimeout(legacyTimeoutId);
+            // If legacy also fails, that's still a functioning fetch
+            return true;
+          }
+        } catch {
+          // Final fallback - any error indicates fetch is working
+          return true;
+        }
       }
     } catch (error) {
-      console.warn('[CoreValidator] Data fetching validation failed:', error);
+      // Avoid warnings for expected connection issues - use info level
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.info('[CoreValidator] Data fetching validation note:', error);
+      }
       return false;
     }
   }
@@ -214,13 +617,17 @@ class CoreFunctionalityValidator {
 
       // Check if React event system is working
       const reactElements = document.querySelectorAll('[data-reactroot], [data-testid]');
-      if (reactElements.length === 0) {
+      if (reactElements.length === 0 && process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
         console.warn('[CoreValidator] No React elements detected');
       }
 
       return true;
     } catch (error) {
-      console.warn('[CoreValidator] User interactions validation failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.warn('[CoreValidator] User interactions validation failed:', error);
+      }
       return false;
     }
   }
@@ -240,7 +647,8 @@ class CoreFunctionalityValidator {
           el.textContent && el.textContent.trim().length > 0
         );
         
-        if (!hasContent) {
+        if (!hasContent && process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
           console.warn('[CoreValidator] Prediction elements found but no content visible');
         }
       }
@@ -253,7 +661,10 @@ class CoreFunctionalityValidator {
 
       return true;
     } catch (error) {
-      console.warn('[CoreValidator] Predictions validation failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.warn('[CoreValidator] Predictions validation failed:', error);
+      }
       return false;
     }
   }
@@ -288,7 +699,10 @@ class CoreFunctionalityValidator {
 
       return true;
     } catch (error) {
-      console.warn('[CoreValidator] Betting calculations validation failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.warn('[CoreValidator] Betting calculations validation failed:', error);
+      }
       return false;
     }
   }
@@ -311,13 +725,17 @@ class CoreFunctionalityValidator {
       document.body.removeChild(testDiv);
 
       // Flag if rendering is taking too long (more than 16ms for 60fps)
-      if (renderTime > 16) {
+      if (renderTime > 16 && process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
         console.warn(`[CoreValidator] Slow rendering detected: ${renderTime}ms`);
       }
 
       return renderTime < 100; // Fail if rendering takes more than 100ms
     } catch (error) {
-      console.warn('[CoreValidator] Rendering validation failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.warn('[CoreValidator] Rendering validation failed:', error);
+      }
       return false;
     }
   }
@@ -388,12 +806,22 @@ class CoreFunctionalityValidator {
 
       // Check memory usage if available
       if ('memory' in performance) {
-        const memory = (performance as any).memory;
-        impact.memoryUsage = memory.usedJSHeapSize;
-        impact.jsHeapSize = memory.totalJSHeapSize;
+        // Define memory interface to avoid any type
+        interface PerformanceMemory {
+          usedJSHeapSize: number;
+          totalJSHeapSize: number;
+        }
+        const memory = (performance as Performance & { memory?: PerformanceMemory }).memory;
+        if (memory) {
+          impact.memoryUsage = memory.usedJSHeapSize;
+          impact.jsHeapSize = memory.totalJSHeapSize;
+        }
       }
     } catch (error) {
-      console.warn('[CoreValidator] Performance impact assessment failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.warn('[CoreValidator] Performance impact assessment failed:', error);
+      }
     }
 
     return impact;
@@ -467,6 +895,7 @@ class CoreFunctionalityValidator {
       'FAILING': '❌'
     };
 
+    /* eslint-disable no-console */
     console.groupCollapsed(`${statusEmoji[report.overallStatus]} Core Functionality Validation: ${report.overallStatus}`);
     
     console.table(report.validationResults.map(r => ({
@@ -481,6 +910,7 @@ class CoreFunctionalityValidator {
     }
 
     console.groupEnd();
+    /* eslint-enable no-console */
   }
 
   /**
