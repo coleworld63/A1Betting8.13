@@ -6786,3 +6786,6 @@ class EnhancedJSONEncoder(json.JSONEncoder):
 
 ---
 ## Detailed API Reference
+
+---
+## Detailed API Reference
