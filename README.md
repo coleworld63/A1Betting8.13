@@ -1,620 +1,438 @@
-# A1Betting - Ultimate Sports Intelligence Platform
+<!--- AI_CONTEXT_BLOCK_START --->
+```json
+{
+  "project": "A1Betting7-13.2",
+  "last_updated": "2025-08-19 09:39 UTC",
+  "directory": [
+    "\u2514\u2500\u2500 itzcole03-a1betting7-13.2/",
+    "    \u251c\u2500\u2500 README.md",
+    "    \u251c\u2500\u2500 ADMIN_MODE_FEATURES.md",
+    "    \u251c\u2500\u2500 API_DOCUMENTATION.md",
+    "    \u251c\u2500\u2500 CHANGELOG.md",
+    "    \u251c\u2500\u2500 cookies.txt",
+    "    \u251c\u2500\u2500 FEATURE_INTEGRATION_ROADMAP.md",
+    "    \u251c\u2500\u2500 Inventory.md",
+    "    \u251c\u2500\u2500 prizepicks_data.db",
+    "    \u251c\u2500\u2500 roadmap.md",
+    "    \u251c\u2500\u2500 test_enhanced_service.py",
+    "    \u251c\u2500\u2500 test_output.txt",
+    "    \u251c\u2500\u2500 users.db",
+    "    \u251c\u2500\u2500 backend/",
+    "    \u2502   \u251c\u2500\u2500 README.md",
+    "    \u2502   \u251c\u2500\u2500 __init__.py",
+    "    \u2502   \u251c\u2500\u2500 a1betting_fallback.db",
+    "    \u2502   \u251c\u2500\u2500 admin_api.py",
+    "    \u2502   \u251c\u2500\u2500 advanced_best_practices_manager.py",
+    "    \u2502   \u251c\u2500\u2500 ADVANCED_BEST_PRACTICES_REPORT_20250701_151152.json",
+    "    \u2502   \u251c\u2500\u2500 advanced_feature_engineering.py",
+    "    \u2502   \u251c\u2500\u2500 agent_planner.py",
+    "    \u2502   \u251c\u2500\u2500 api_integration.py",
+    "    \u2502   \u251c\u2500\u2500 arbitrage_engine.py",
+    "    \u2502   \u251c\u2500\u2500 auth.py",
+    "    \u2502   \u251c\u2500\u2500 auth_service.py",
+    "    \u2502   \u251c\u2500\u2500 autonomous_project_development_handler.py",
+    "    \u2502   \u251c\u2500\u2500 autonomous_recursive_orchestrator.py",
+    "    \u2502   \u251c\u2500\u2500 autonomous_system.py",
+    "    \u2502   \u251c\u2500\u2500 backend_8001.py",
+    "    \u2502   \u251c\u2500\u2500 BACKEND_FILE_USAGE_ANALYSIS.md",
+    "    \u2502   \u251c\u2500\u2500 background_agents.py",
+    "    \u2502   \u251c\u2500\u2500 betting_opportunity_service.py",
+    "    \u2502   \u251c\u2500\u2500 cache_optimizer.py",
+    "    \u2502   \u251c\u2500\u2500 cleanup_console_statements.py",
+    "    \u2502   \u251c\u2500\u2500 command_registry.py",
+    "    \u2502   \u251c\u2500\u2500 complete_stub_endpoints.py",
+    "    \u2502   \u251c\u2500\u2500 config.py",
+    "    \u2502   \u251c\u2500\u2500 config_manager.py",
+    "    \u2502   \u251c\u2500\u2500 data_pipeline.py"
+  ],
+  "api_endpoints": [
+    "backend/admin_api.py: @router.get(\"/admin/logs\", response_model=List[LogEntry])",
+    "backend/admin_api.py: @router.post(\"/admin/logs\")",
+    "backend/admin_api.py: @router.get(\"/admin/users\", response_model=List[User])",
+    "backend/admin_api.py: @router.get(\"/admin/health\")",
+    "backend/api_integration.py: @app.get(\"/health\")",
+    "backend/backend_8001.py: @app.get(\"/\")",
+    "backend/backend_8001.py: @app.get(\"/health\")",
+    "backend/backend_8001.py: @app.get(\"/api/prizepicks/props\")",
+    "backend/betting_opportunity_service.py: @router.get(\"/opportunities\")",
+    "backend/betting_opportunity_service.py: @router.get(\"/status\")"
+  ],
+  "file_types": {
+    ".py": 229,
+    ".md": 54,
+    ".txt": 16,
+    ".json": 11,
+    ".js": 9,
+    ".db": 6,
+    ".bat": 5,
+    ".html": 5,
+    ".ps1": 4,
+    "(no ext)": 3,
+    ".sh": 3,
+    ".cjs": 3,
+    ".example": 2,
+    ".ini": 1,
+    ".pkl": 1,
+    ".backup": 1,
+    ".code-workspace": 1
+  },
+  "health": {
+    "backend": "present",
+    "frontend": "present",
+    "api_health": "/api/health"
+  }
+}
+```
+<!--- AI_CONTEXT_BLOCK_END --->
+![License](https://img.shields.io/badge/license-MIT-blue.svg) ![Python](https://img.shields.io/badge/python-3.8%2B-blue) ![TypeScript](https://img.shields.io/badge/typescript-%5E5.0-blue) ![Build](https://img.shields.io/badge/build-passing-brightgreen) ![Code Size](https://img.shields.io/github/languages/code-size/itzcole03/A1Betting7-13.2) ![Repo Size](https://img.shields.io/github/repo-size/itzcole03/A1Betting7-13.2)
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg) ![React](https://img.shields.io/badge/react-19.1.0-blue) ![TypeScript](https://img.shields.io/badge/typescript-5.7.3-blue) ![Build](https://img.shields.io/badge/build-stable-green) ![Status](https://img.shields.io/badge/status-production--ready-brightgreen) ![Vite](https://img.shields.io/badge/vite-7.0.6-blue) ![Phase](https://img.shields.io/badge/phase-4%20complete-success) ![Testing](https://img.shields.io/badge/testing-90%25%2B%20coverage-brightgreen) ![SportRadar](https://img.shields.io/badge/SportRadar-19%20APIs-orange)
+# A1Betting7-13.2
 
-**The next-generation sports prop research and analytics platform engineered to surpass PropFinder and PropGPT. Features advanced AI with quantum-inspired optimization, comprehensive risk management, multi-sportsbook arbitrage detection, enterprise-grade reliability, and now powered by comprehensive SportRadar API integration.**
+**Professional Desktop Sports Intelligence Platform**
 
-> 🛠️ **Development Mode**: For optimized development experience with reduced monitoring overhead, see [Lean Mode Documentation](docs/dev/stabilization_lean_mode.md)
+---
+## 🤖 AI Agent Quick Start (Copilot/LLM/Auto Mode)
+---
+This project is designed for seamless use with AI copilots and LLM-based agents (e.g., Copilot, Cursor, GPT-4, etc.).
+- **All auto-generated sections are clearly marked.**
+- **To update documentation, run:**
+  ```
+  python scripts/extract_digest_for_docs.py
+  ```
+- **Copilots should use the auto-generated sections for context, code search, and code generation.**
+- **Manual narrative sections are for human onboarding, tutorials, and conceptual docs.**
+- **Copilots should preserve manual narrative sections and only regenerate auto-generated blocks.**
+- **All diagrams are in Mermaid format for easy parsing and visualization.**
+- **Last Updated:** 2025-08-19 09:39 UTC
+---
+---
+## 🤖 Copilot/AI Agent Integration
+---
+- Use the auto-generated sections for code search, refactoring, and onboarding.
+- Use the directory tree and architecture diagrams for project navigation.
+- Use the API docs for endpoint discovery and code generation.
+- Use the roadmap for feature planning and TODO tracking.
+- To keep docs in sync, always run the extraction script after code changes.
+- Manual narrative sections are for human context and should be preserved.
+---
+---
+## 🤖 Context for LLMs
+---
+- Use only the auto-generated sections for code search and context.
+- Do not hallucinate features or endpoints not present in the docs.
+- Always preserve the Manual Narrative Section.
+- If you update code, rerun the extraction script to keep docs in sync.
+---
+---
+## 📝 Manual Narrative Section (Human-Written)
+---
+_Add onboarding, tutorials, conceptual explanations, and human context here.
+Copilots and AI agents should **not** overwrite this section!_
+---
+---
+## 🚀 Quick Start
+---
+1. Clone the repo
+   ```
+   git clone https://github.com/itzcole03/A1Betting7-13.2.git
+   cd A1Betting7-13.2
+   ```
+2. Install dependencies
+   ```
+   cd frontend && npm install
+   cd ../backend && pip install -r requirements.txt
+   ```
+3. Start the backend
+   ```
+   python main.py
+   ```
+4. Start the frontend
+   ```
+   cd ../frontend && npm run dev
+   ```
+5. Open the app
+   - Web: http://localhost:8173
+   - Desktop: Run the Electron app
+---
+---
+## ❓ FAQ / Troubleshooting
+---
+- **Q: I get a port in use error when starting the frontend?**
+  - A: The dev server will try the next available port. Check the terminal for the new port.
+- **Q: Backend won't start, missing dependencies?**
+  - A: Run `pip install -r requirements.txt` in the backend directory.
+- **Q: How do I regenerate documentation?**
+  - A: Run `python scripts/extract_digest_for_docs.py` from the project root.
+- **Q: Where do I add onboarding or tutorials?**
+  - A: In the Manual Narrative Section of the README.
+---
+---
+## 🔗 Related Resources
+---
+- [API Documentation](API_DOCUMENTATION.md)
+- [Roadmap](roadmap.md)
+- [Changelog](CHANGELOG.md)
+- [Feature Integration Roadmap](FEATURE_INTEGRATION_ROADMAP.md)
+---
+---
+## 🩺 Project Health
+---
+- All core services present.
+- Health API available at `/api/health` (see backend).
+- For live status, run the backend and visit http://localhost:8000/api/health/all
+---
+---
+## 📝 Changelog (Latest)
+---
+# A1Betting7-13.2 Changelog
+
+## [2025-08-15] - PR10 Drift Monitoring & Calibration Baseline
+
+### Added
+
+* **PR10: Drift Monitoring & Calibration Baseline**
+  * **DriftMonitor Service**: Rolling window analysis (w50, w200, wall) with comprehensive drift metrics computation
+  * **Drift Status Classification**: NORMAL/WATCH/DRIFTING status with configurable thresholds (`A1_DRIFT_WARN`, `A1_DRIFT_ALERT`)
+  * **Shadow Promotion Readiness**: Automated scoring with PROMOTE/MONITOR/HOLD recommendations and latency penalty factors
+  * **Calibration System**: Outcome ingestion via `/api/v2/models/outcomes` with MAE tracking and distribution buckets
+  * **Schema Versioning**: v1.1 audit entries with backward compatibility for existing v1.0 entries
+  * **Enhanced API Endpoints**: Extended `/api/v2/models/audit/summary` and new `/api/v2/models/audit/status` endpoint
+  * **Frontend Integration**: Drift status visualization, readiness gauge, and outcome recording in InferenceAuditPanel
+  * **Comprehensive Testing**: 20+ test cases covering drift classification, readiness calculation, and calibration metrics
+  * **Documentation**: Complete `docs/ml/model_drift_and_calibration.md` with architecture, configuration, and troubleshooting
+
+#### PR10 Drift Detection Features
+
+* **Multi-Window Analysis**: Statistical analysis across 50, 200, and full buffer windows
+---
+---
+## 🤖 Contributing as an AI Agent
+---
+- Open a pull request with a clear description of your changes.
+- Tag your PR with `[AI]` in the title.
+- If you are an LLM, summarize your reasoning and cite relevant code sections.
+- Respect the Manual Narrative Section and do not overwrite it.
+- If you are unsure, ask for human review.
+---
+---
+## 🤖 AI Self-Test
+---
+To verify documentation and code are in sync, copilots/LLMs should:
+1. Parse the AI_CONTEXT_BLOCK at the top of this README.
+2. Compare directory and endpoints to the current codebase.
+3. If drift is detected, run `python scripts/extract_digest_for_docs.py` to update docs.
+4. Report pass/fail in PRs or issues.
+---
+---
+## 📜 Data Provenance & Usage Policy
+---
+All code and data in this repo are original or properly attributed.
+AI agents must cite this repo and relevant files when generating new content.
+For external data, see the LICENSE and attribution files.
+---
+---
+## 🔄 Streaming/Partial Update
+---
+For large repos, you can update only specific sections:
+- To update only API docs: run the extraction script with the `--api` flag (future).
+- To update only the roadmap: run with the `--roadmap` flag (future).
+- For now, the script updates all docs at once.
+---
+---
+## 🩺 Continuous Doc Health
+---
+- Last doc update: 2025-08-19 09:39 UTC
+- Last code update: (see git log)
+- If doc/code drift is detected, run the extraction script.
+---
+---
+## 🧠 LLM Prompt Engineering Tips
+---
+- Use the AI_CONTEXT_BLOCK for instant context loading.
+- Ask for code samples, API endpoints, or directory structure as needed.
+- Use the roadmap and changelog for planning and history.
+- Always cite sources and preserve manual narrative.
+---
+---
+## 🤖 AI/LLM Usage Policy
+---
+- AI agents may open PRs, refactor code, and generate tests.
+- All major changes should be reviewed by a human.
+- Manual narrative and license sections must be preserved.
+- Cite this repo and relevant files in all AI-generated content.
+---
+---
+## 🚨 DO NOT EDIT BELOW THIS LINE: AUTO-GENERATED BY extract_digest_for_docs.py 🚨
+---
+**Last Updated:** 2025-08-19 09:39 UTC
+---
+
+## Features
+- Native Electron desktop app (Windows, macOS, Linux)
+- FastAPI backend with health monitoring
+- Real-time sports data, analytics, and predictions
+- Secure local storage (SQLite, encrypted)
+- Auto-updates, system tray, and notifications
+- Modular, extensible architecture
+- Professional packaging and distribution
+- Comprehensive test suite
+- Modern UI/UX
+- And more!
 
 ---
 
-## 🎯 **Latest Updates (August 2025)**
+## Directory Structure
+````markdown
+└── itzcole03-a1betting7-13.2/
+    ├── README.md
+    ├── ADMIN_MODE_FEATURES.md
+    ├── API_DOCUMENTATION.md
+    ├── CHANGELOG.md
+    ├── cookies.txt
+    ├── FEATURE_INTEGRATION_ROADMAP.md
+    ├── Inventory.md
+    ├── prizepicks_data.db
+    ├── roadmap.md
+    ├── test_enhanced_service.py
+    ├── test_output.txt
+    ├── users.db
+    ├── backend/
+    │   ├── README.md
+    │   ├── __init__.py
+    │   ├── a1betting_fallback.db
+    │   ├── admin_api.py
+    │   ├── advanced_best_practices_manager.py
+    │   ├── ADVANCED_BEST_PRACTICES_REPORT_20250701_151152.json
+    │   ├── advanced_feature_engineering.py
+    │   ├── agent_planner.py
+    │   ├── api_integration.py
+    │   ├── arbitrage_engine.py
+    │   ├── auth.py
+    │   ├── auth_service.py
+    │   ├── autonomous_project_development_handler.py
+    │   ├── autonomous_recursive_orchestrator.py
+    │   ├── autonomous_system.py
+    │   ├── backend_8001.py
+    │   ├── BACKEND_FILE_USAGE_ANALYSIS.md
+    │   ├── background_agents.py
+    │   ├── betting_opportunity_service.py
+    │   ├── cache_optimizer.py
+    │   ├── cleanup_console_statements.py
+    │   ├── command_registry.py
+    │   ├── complete_stub_endpoints.py
+    │   ├── config.py
+    │   ├── config_manager.py
+    │   ├── data_pipeline.py
+...
+````
 
-### ✅ **NEW: Stabilization Patch - Enhanced Development Experience**
+---
 
-**Comprehensive system stabilization focused on clean development experience, health endpoint standardization, and lean development mode implementation.**
-
-#### 🏥 **Health Endpoint Standardization**
-
-- **Unified Health Aliases**: `/health`, `/api/v2/health` → `/api/health` with identical envelope format
-- **HEAD Method Support**: All health endpoints support HEAD requests (200 status, no body)
-- **Standardized Responses**: Consistent `{success, data, error, meta}` envelope across all health endpoints
-- **404 Elimination**: Resolved monitoring system errors from missing health endpoint variants
-
-#### 🛠️ **Lean Development Mode**
-
-- **Environment Control**: `APP_DEV_LEAN_MODE=true` for development optimization
-- **Middleware Optimization**: Conditional loading of heavy middleware (Prometheus, PayloadGuard, RateLimit, SecurityHeaders)
-- **Monitoring Control**: Selective disabling of monitoring services to reduce console noise
-- **Status Endpoint**: `/dev/mode` for real-time lean mode status checking
-
-#### 🔌 **WebSocket & API Enhancements**
-
-- **Unified Configuration**: Standardized WebSocket URL derivation from host/port configuration  
-- **CORS Preflight**: Enhanced OPTIONS handling for cross-origin requests
-- **UnifiedDataService**: Added missing `cacheData()` and `getCachedData()` methods to prevent runtime errors
-
-#### 🧪 **Comprehensive Testing**
-
-- **Stabilization Test Matrix**: 10 test methods covering health endpoints, CORS, WebSocket derivation, lean mode validation
-- **Automated Validation**: 6/10 core stabilization features validated with comprehensive test coverage
-
-### ✅ **NEW: Comprehensive SportRadar Integration**
-
-**Complete integration of all 19 SportRadar trial APIs providing professional-grade sports data, odds comparison, and media assets.**
-
-#### 🏆 **SportRadar API Coverage**
-
-- **Sports Data APIs**: MLB, NFL, NBA, NHL, Soccer, Tennis, MMA, NASCAR, WNBA, NCAAFB, Table Tennis
-- **Odds Comparison APIs**: Futures, Prematch, Player Props, Regular odds across all major sportsbooks
-- **Image APIs**: Getty Images, College PressBox, SportRadar Images, Associated Press
-- **Live Data**: Real-time scores, injury reports, player statistics, team profiles
-- **Trial Period**: August 11, 2025 - September 10, 2025 (1,000 requests/API, 100 for images)
-
-#### ⚡ **Smart API Management**
-
-- **Intelligent Quota Monitoring**: Real-time tracking across all 19 APIs with usage visualization
-- **Automatic Rate Limiting**: 1 QPS per API with intelligent request queuing
-- **Cloud Environment Detection**: Automatic fallback to demo data in cloud deployments
-- **Parallel Data Fetching**: Concurrent requests across multiple APIs with failure tolerance
-- **Advanced Caching**: Sport-specific TTL strategies (30s for live data, 1hr for images, 15min for futures)
-
-#### 🌐 **New API Endpoints**
-
-```bash
-# SportRadar Integration Dashboard
-GET  /api/v1/sportradar/health           # Service health and quota status
-GET  /api/v1/sportradar/quota            # Detailed quota usage across all APIs
-GET  /api/v1/sportradar/comprehensive    # Aggregated data from all APIs
-GET  /api/v1/sportradar/live/{sport}     # Live scores and real-time data
-GET  /api/v1/sportradar/sports/{sport}/{endpoint}  # Individual sport data
-GET  /api/v1/sportradar/odds/{type}/{sport}/{competition}  # Odds comparison
-GET  /api/v1/sportradar/images/{provider}/{sport}/{competition}  # Media assets
-GET  /api/v1/sportradar/apis             # List all available APIs and status
+## Visual Directory Tree
+```mermaid
+graph TD
+    itzcole03-a1betting7-13.2[itzcole03-a1betting7-13.2]
+    ____README.md[README.md]
+    ____ADMIN_MODE_FEATURES.md[ADMIN_MODE_FEATURES.md]
+    ____API_DOCUMENTATION.md[API_DOCUMENTATION.md]
+    ____CHANGELOG.md[CHANGELOG.md]
+    ____cookies.txt[cookies.txt]
+    ____FEATURE_INTEGRATION_ROADMAP.md[FEATURE_INTEGRATION_ROADMAP.md]
+    ____Inventory.md[Inventory.md]
+    ____prizepicks_data.db[prizepicks_data.db]
+    ____roadmap.md[roadmap.md]
+    ____test_enhanced_service.py[test_enhanced_service.py]
+    ____test_output.txt[test_output.txt]
+    ____users.db[users.db]
+    ____backend[backend]
+    ____│   README.md[│   README.md]
+    ____│   __init__.py[│   __init__.py]
+    ____│   a1betting_fallback.db[│   a1betting_fallback.db]
+    ____│   admin_api.py[│   admin_api.py]
+    ____│   advanced_best_practices_manager.py[│   advanced_best_practices_manager.py]
+    ____│   ADVANCED_BEST_PRACTICES_REPORT_20250701_151152.json[│   ADVANCED_BEST_PRACTICES_REPORT_20250701_151152.json]
 ```
 
-### ✅ **Phase 4: Performance Optimization & Launch Preparation - COMPLETE**
-
-**Production-ready platform with enterprise-grade performance optimization, comprehensive testing, and monitoring systems.**
-
-#### ⚡ **Performance Optimization Features**
-
-- **React 19 Concurrent Features**: Enhanced rendering with useTransition, useDeferredValue, and startTransition
-- **Virtual Scrolling**: Handle 10,000+ betting props with smooth 60fps performance
-- **Advanced Caching**: Multi-layer caching with Redis fallback and intelligent cache invalidation
-- **Backend Optimization**: FastAPI with performance middleware, connection pooling, and async operations
-- **Database Optimization**: Query optimization, indexing strategies, and connection pooling
-- **Memory Management**: Efficient garbage collection and memory usage optimization
-
-#### 🧪 **Complete Testing Automation Framework**
-
-- **Enhanced Jest Configuration**: 90%+ coverage thresholds with TypeScript support and advanced module mapping
-- **Comprehensive Integration Testing**: 85%+ API coverage with authentication, analytics, and AI services validation
-- **Playwright E2E Testing**: Multi-browser testing (Chrome, Firefox, Safari, Mobile) with 40+ user journey scenarios
-- **Accessibility Compliance**: WCAG 2.1 AA validation with automated accessibility checks
-- **Visual Regression Testing**: Screenshot comparisons and performance monitoring during E2E tests
-- **Mobile Responsiveness**: Complete mobile experience testing with touch interactions
-
-#### 🚀 **Launch Readiness Infrastructure**
-
-- **Performance Monitoring Dashboard**: Real-time metrics with alerts and diagnostics
-- **System Testing Dashboard**: Automated test execution with comprehensive reporting
-- **Documentation Hub**: Searchable knowledge base with progressive difficulty levels
-- **User Onboarding Flow**: Interactive multi-step introduction with preference collection
-- **Launch Monitoring**: Performance metrics, security validation, and deployment readiness tracking
-- **Launch Readiness Checker**: Final validation system with 96% overall readiness score
-
-#### 📊 **Performance Benchmarks**
-
-- **Frontend Load Time**: <0.3 seconds initial load
-- **API Response Time**: <100ms average for core operations
-- **Memory Usage**: <50MB for 10,000+ props with virtual scrolling
-- **Bundle Size**: Optimized to <2MB with tree shaking and code splitting
-- **Database Queries**: <20ms average response time with connection pooling
-- **Cache Hit Rate**: 95%+ for frequently accessed data
-
-#### 🛡️ **Reliability & Error Handling**
-
-- **Circuit Breaker Pattern**: Automatic failover and recovery for external API failures
-- **Graceful Degradation**: Cloud environment detection with automatic fallback to mock data
-- **Error Recovery**: Advanced error boundaries with automatic retry mechanisms
-- **Monitoring Integration**: Real-time health checks and performance alerting
-- **Robust API Handling**: JSON parsing validation and content-type checking
-
-### 🔍 **Transparency & Reliability Features**
-
-- **Complete AI Transparency**: Comprehensive disclaimers clarifying quantum-inspired classical algorithms vs. actual quantum computing
-- **Enhanced Error Handling**: Advanced diagnostic tools for API errors with detailed troubleshooting
-- **Performance Monitoring**: Real-time health monitoring for data services with automatic diagnostics
-- **Component Stability**: Fixed dynamic import issues and improved error recovery mechanisms
-- **Fallback Systems**: Robust fallback data when APIs are unavailable, ensuring continuous operation
-
 ---
 
-## 🚀 **Quick Start**
-
-### 🌐 **Live Demo**
-
-**[View Live Demo](https://h1z3m1-5173.csb.app/)** - Experience the PropFinder killer in action!
-
-### ⚡ **30-Second Local Setup**
-
-```bash
-# Clone and run immediately
-git clone https://github.com/itzcole03/A1Betting7-13.2.git
-cd A1Betting7-13.2/frontend
-npm install && npm run dev
-# Open http://localhost:5173 - Full platform ready!
-```
-
-### 🛠️ **Full Installation**
-
-```bash
-# Clone the repository
-git clone https://github.com/itzcole03/A1Betting7-13.2.git
-cd A1Betting7-13.2
-
-# Frontend setup (main application)
-cd frontend
-npm install
-
-# Backend setup (optional - app works in demo mode)
-cd ../backend
-pip install -r requirements.txt
-
-# Set SportRadar API key (optional - includes demo mode)
-export SPORTRADAR_API_KEY=your_api_key_here
+## Architecture Diagram
+```mermaid
+graph LR
+Frontend[Frontend (Electron/React)] --> Backend[Backend (FastAPI/Python)]
+Backend --> DB[(SQLite/Encrypted)]
+Backend --> APIs[External APIs]
+Frontend --> User[User]
 ```
 
 ---
 
-## 🏆 **A1Betting vs PropFinder**
-
-| Feature             | PropFinder  | A1Betting                               | Advantage                                |
-| ------------------- | ----------- | --------------------------------------- | ---------------------------------------- |
-| **Cost**            | $29+/month  | Free Forever                            | **Save $348+ annually**                  |
-| **Data Source**     | Limited     | SportRadar (19 APIs)                    | **Official sports data provider**        |
-| **AI Engine**       | None        | Quantum-Inspired Optimization           | **Advanced mathematical algorithms**     |
-| **Performance**     | Standard    | React 19 + Virtual Scrolling            | **10x faster, handles 10,000+ props**    |
-| **Testing**         | Unknown     | Enterprise testing framework            | **90%+ coverage with E2E validation**    |
-| **Documentation**   | Limited     | 200+ pages comprehensive guides         | **Complete developer resources**         |
-| **Response Time**   | 2-5 seconds | <0.3 seconds                            | **15x faster performance**               |
-| **Analytics**       | Basic       | 6 analysis types + Bayesian modeling    | **Professional-grade statistical tools** |
-| **Risk Management** | Limited     | Kelly Criterion + Advanced optimization | **Mathematically optimal bet sizing**    |
-| **Cloud Support**   | Limited     | Advanced cloud deployment ready         | **Enterprise-grade scalability**         |
-| **API Integration** | Basic       | 19 SportRadar APIs + Smart Management   | **Professional data infrastructure**     |
-
----
-
-## 🔍 **Core Features**
-
-### 🎯 **1. Advanced AI PropFinder-Killer Dashboard**
-
-- **Enhanced Player Dashboard**: PropFinder-matching interface with quantum-inspired analytics
-- **Ultimate Money Maker**: AI-powered betting engine with neural network analysis
-- **Multi-State Probability Analysis**: Advanced prediction modeling using quantum-inspired classical algorithms
-- **AI Confidence Scoring**: Multi-factor analysis with Expected Value calculations and transparent reasoning
-- **Virtual Scrolling Performance**: Handle 10,000+ props with React 19 concurrent features
-- **Real-time Monitoring**: Live system health and performance tracking
-
-### 📊 **2. Comprehensive SportRadar Integration**
-
-- **19 Professional APIs**: Complete sports data ecosystem with official SportRadar integration
-- **Live Sports Data**: Real-time scores, player stats, injury reports across 11+ sports
-- **Odds Comparison**: Futures, prematch, and player props odds from multiple sportsbooks
-- **Media Assets**: Getty Images, AP Photos, team logos, and country flags
-- **Smart Quota Management**: Intelligent usage tracking with automatic rate limiting
-- **Cloud-Ready**: Automatic fallback and demo mode for seamless deployment
-
-### 💰 **3. Multi-Sportsbook Arbitrage**
-
-- **8+ Sportsbooks**: DraftKings, FanDuel, BetMGM, Caesars, BetRivers+
-- **Real-Time Detection**: Automatic profit opportunity identification
-- **Advanced Mathematical Calculations**: Sophisticated arbitrage and EV calculations
-- **Alert System**: Push notifications for high-value opportunities
-- **Best Line Finder**: ML-powered optimal line selection
-
-### 🧮 **4. Advanced Risk Management**
-
-- **Kelly Criterion Calculator**: Mathematically optimal bet sizing
-- **Advanced Portfolio Optimization**: Risk-adjusted return analysis with quantum-inspired mathematical modeling
-- **Bankroll Tracking**: Comprehensive performance monitoring
-- **Drawdown Protection**: Automated risk mitigation
-- **Monte Carlo Simulation**: Advanced probability modeling
-
-### 🤖 **5. Advanced AI Intelligence Center**
-
-- **Ollama LLM Integration**: Privacy-focused local AI processing
-- **Quantum-Inspired Optimization**: Mathematical optimization using quantum annealing simulation
-- **Neural Network Ensemble**: XGBoost, LSTM, Random Forest consensus
-- **Real-time Model Tracking**: Live performance metrics with confidence intervals
-- **SHAP Explainability**: Transparent AI reasoning
-
-### 📈 **6. Comprehensive Analytics Suite**
-
-- **Statistical Analysis Tools**: 6 analysis types including Bayesian modeling
-- **Predictive Insights**: Confidence intervals and statistical significance
-- **Performance Monitoring**: Real-time pipeline health and data quality validation
-- **Advanced Visualizations**: Interactive charts and heatmaps
-- **Custom Analytics**: Regression modeling and correlation matrices
+## Technology Stack
+- .py: 229 files
+- .md: 54 files
+- .txt: 16 files
+- .json: 11 files
+- .js: 9 files
+- .db: 6 files
+- .bat: 5 files
+- .html: 5 files
+- .ps1: 4 files
+- (no ext): 3 files
+- .sh: 3 files
+- .cjs: 3 files
+- .example: 2 files
+- .ini: 1 files
+- .pkl: 1 files
+- .backup: 1 files
+- .code-workspace: 1 files
 
 ---
 
-## 🛠️ **Technology Stack**
+## API Endpoints
+- backend/admin_api.py: @router.get("/admin/logs", response_model=List[LogEntry])
+- backend/admin_api.py: @router.post("/admin/logs")
+- backend/admin_api.py: @router.get("/admin/users", response_model=List[User])
+- backend/admin_api.py: @router.get("/admin/health")
+- backend/api_integration.py: @app.get("/health")
+- backend/backend_8001.py: @app.get("/")
+- backend/backend_8001.py: @app.get("/health")
+- backend/backend_8001.py: @app.get("/api/prizepicks/props")
+- backend/betting_opportunity_service.py: @router.get("/opportunities")
+- backend/betting_opportunity_service.py: @router.get("/status")
+- ...
 
-### **Frontend Architecture**
-
-- **React 19.1.0** - Latest concurrent features and automatic batching
-- **TypeScript 5.7.3** - Strict type checking with ES2022 target
-- **Vite 7.0.6** - Lightning-fast development and optimized builds
-- **TailwindCSS 4.1.11** - Utility-first CSS with custom cyber theme
-- **Framer Motion 11.16.4** - 60fps animations and micro-interactions
-- **@tanstack/react-virtual** - Virtual scrolling for massive datasets
-- **TanStack React Query 5.83.0** - Powerful server state management
-
-### **Backend Services**
-
-- **FastAPI** - High-performance async Python framework with performance middleware
-- **Pydantic V2** - Runtime type validation and serialization
-- **SQLAlchemy 2** - Modern async ORM with connection pooling and query optimization
-- **Redis Caching** - Intelligent caching with automatic fallback mechanisms
-- **SportRadar Integration** - Official sports data with 19 professional APIs
-- **Data Quality Monitoring** - Real-time validation with anomaly detection
-
-### **Modern ML Service (NEW)**
-
-Advanced sports prediction pipeline: - Transformer-based models for sequential sports data - Graph Neural Networks for relationship modeling - Automated feature engineering (featuretools, custom logic) - Bayesian ensemble weighting for robust predictions - Monte Carlo simulation for prop probability estimation - SHAP-based explainability and feature importance - MLOps integration (MLflow, Optuna) for experiment tracking and hyperparameter optimization - Performance optimization, distributed processing, and real data integration - Advanced caching and real-time update pipeline
-
-**Modern ML API fields:** - `over_prob`: Probability the prop goes over the line (Monte Carlo simulation) - `under_prob`: Probability the prop goes under the line - `expected_value`: Expected value of the prop bet - `explanation`: Human-readable model reasoning and SHAP feature importance - `confidence`, `uncertainty_lower`, `uncertainty_upper`: Model confidence and uncertainty bounds
-
-**Backend ML Workflow:** 1. **Feature Engineering:** Automated extraction of rolling stats, interaction features, and temporal context 2. **Model Prediction:** Transformer and GNN models generate predictions from engineered features 3. **Ensemble Weighting:** Bayesian optimizer dynamically weights model outputs for robust consensus 4. **Monte Carlo Simulation:** Simulates prop outcomes to estimate over/under probabilities and expected value 5. **Explainability:** SHAP values and feature importance provide transparent model reasoning 6. **Caching & Performance:** Hierarchical cache and async processing for fast, scalable inference
-
-**Example Usage:**
-
+## Example Code
 ```python
-from backend.services.modern_ml_service import modern_ml_service, PredictionRequest
-
-request = PredictionRequest(
-		prop_id="12345",
-		player_name="John Doe",
-		team="Yankees",
-		opponent_team="Red Sox",
-		sport="MLB",
-		stat_type="Home Runs",
-		line_score=1.5,
-		historical_data=[...],
-		team_data={...},
-		opponent_data={...},
-		game_context={...},
-		injury_reports=[...],
-		recent_news=[...],
-)
-result = await modern_ml_service.predict(request)
-print(result.over_prob, result.under_prob, result.expected_value, result.explanation)
+class LogEntry(BaseModel):
 ```
-
-**Benefits:**
-
-- Rich analytics for every prop: probabilities, expected value, and transparent reasoning
-- Robust predictions using ensemble of advanced ML models
-- Fast, scalable, and explainable backend for enterprise-grade sports analytics
-
-### **SportRadar Integration**
-
-- **19 Professional APIs** - Sports data, odds comparison, and media assets
-- **Intelligent Rate Limiting** - 1 QPS per API with request queuing
-- **Automatic Quota Management** - Real-time tracking and usage optimization
-- **Cloud Environment Detection** - Seamless fallback for demo deployments
-- **Parallel Data Processing** - Concurrent API calls with failure tolerance
-
-### **AI/ML Infrastructure**
-
-- **Quantum-Inspired Optimization** - Classical algorithms using quantum annealing and variational methods
-- **Neural Network Ensemble** - XGBoost, LSTM, Random Forest consensus models
-- **Ollama** - Local LLM (Llama 2, Mistral, Code Llama)
-- **scikit-learn** - Traditional ML models and ensemble methods
-- **SHAP** - Model explainability and feature importance
-
-### **Testing Infrastructure (Phase 4)**
-
-- **Jest 29.7.0** - Enhanced unit testing with TypeScript support and 90%+ coverage
-- **Playwright 1.48.2** - Multi-browser E2E testing (Chrome, Firefox, Safari, Mobile)
-- **Testing Library** - Component testing with accessibility and user interaction focus
-- **MSW (Mock Service Worker)** - API mocking for integration testing
-- **Visual Regression** - Screenshot comparison and visual validation
-- **Performance Testing** - Load testing and benchmarking capabilities
-
-### **Performance & Monitoring**
-
-- **Performance Monitoring Dashboard** - Real-time metrics and alerts
-- **Advanced Caching Service** - Multi-layer caching with intelligent invalidation
-- **Circuit Breaker Pattern** - Automatic failover and recovery
-- **Cloud Environment Detection** - Automatic fallback for cloud deployments
-- **Memory Optimization** - Efficient resource management and garbage collection
+```python
+class User(BaseModel):
+```
+```python
+def get_logs():
+```
+```python
+class AdvancedSupervisorCoordinator:
+```
+```python
+class AdvancedBestPracticesManager:
+```
+...
 
 ---
-
-## 🚀 **Development Guide**
-
-### **Frontend Development**
-
-```bash
-cd frontend
-
-# Development
-npm run dev              # Start dev server (http://localhost:5173)
-npm run build            # Production build with optimization
-npm run preview          # Test production build
-npm run dev:performance  # Development with performance monitoring
-
-# Testing - Phase 4 Comprehensive Framework
-npm run test             # Jest unit tests (90%+ coverage)
-npm run test:integration # Integration test suite
-npm run test:e2e         # Playwright E2E tests (multi-browser)
-npm run test:e2e:mobile  # Mobile E2E testing
-npm run test:a11y        # Accessibility testing (WCAG 2.1 AA)
-npm run test:performance # Performance benchmarking
-npm run test:all         # Complete test suite execution
-
-# Code Quality
-npm run lint             # ESLint checking
-npm run type-check       # TypeScript validation
-npm run format           # Prettier formatting
-npm run analyze          # Bundle analysis and optimization
-```
-
-### **Backend Development**
-
-```bash
-# From project root
-python -m uvicorn backend.optimized_production_integration:create_optimized_app --host 0.0.0.0 --port 8000 --reload
-
-# Testing
-pytest                   # Run all tests
-pytest --cov=backend     # Coverage testing
-pytest --performance     # Performance testing
-
-# Code Quality
-black backend/           # Format code
-mypy backend/            # Type checking
-```
-
-### **SportRadar API Testing**
-
-```bash
-# Test SportRadar integration
-curl http://localhost:8000/api/v1/sportradar/health
-curl http://localhost:8000/api/v1/sportradar/quota
-curl http://localhost:8000/api/v1/sportradar/live/mlb
-curl http://localhost:8000/api/v1/sportradar/comprehensive
-```
+## Detailed API Reference
+---
+## How to Contribute
+1. Fork the repo and create a feature branch.
+2. Add your feature or fix.
+3. Submit a pull request with a clear description.
 
 ---
-
-## 🔧 **Configuration**
-
-### **Environment Variables**
-
-Create `.env` in the `backend/` directory:
-
-```env
-# SportRadar API Integration (NEW)
-SPORTRADAR_API_KEY=your_sportradar_api_key_here
-
-# Additional API Keys (optional - demo mode works without)
-ODDS_API_KEY=your_key_here
-DRAFTKINGS_API_KEY=your_key_here
-
-# AI Configuration
-OLLAMA_API_URL=http://localhost:11434
-
-# Database
-DATABASE_URL=postgresql://user:pass@localhost/a1betting
-
-# Development
-VITE_API_BASE_URL=http://localhost:8000
-
-# Performance Monitoring (Phase 4)
-ENABLE_PERFORMANCE_MONITORING=true
-ENABLE_QUANTUM_AI_SIMULATION=true
-REDIS_URL=redis://localhost:6379
-ENABLE_CACHING=true
-PERFORMANCE_ALERT_THRESHOLD=500
-
-# SportRadar Configuration
-ENABLE_SPORTRADAR_INTEGRATION=true
-SPORTRADAR_QUOTA_ALERT_THRESHOLD=80
-ENABLE_CLOUD_FALLBACK=true
-```
-
+## Vision
+A1Betting7-13.2 aims to be the most robust, powerful, and beautifully designed sports intelligence platform for professionals and enthusiasts alike.
 ---
-
-## 🛠️ **Troubleshooting**
-
-### **Common Issues**
-
-**Frontend Won't Start**
-
-```bash
-cd frontend
-rm -rf node_modules package-lock.json
-npm install && npm run dev
-```
-
-**SportRadar API Issues**
-
-```bash
-# Check SportRadar integration status
-curl http://localhost:8000/api/v1/sportradar/health
-
-# Verify API key configuration
-echo $SPORTRADAR_API_KEY
-
-# Test quota usage
-curl http://localhost:8000/api/v1/sportradar/quota
-```
-
-**Performance Issues**
-
-```bash
-# Virtual scrolling handles 10,000+ props
-# React 19 concurrent features for smooth rendering
-# Performance monitoring built-in for optimization
-# Check performance dashboard at /api/v1/sportradar/comprehensive
-```
-
-**API Issues**
-
-```bash
-# Dashboard includes built-in error diagnostics
-# Fallback data automatically provided during server errors
-# Demo mode provides full functionality without backend
-# Cloud environment detection prevents fetch errors
-# SportRadar integration includes automatic quota management
-```
-
-**Testing Issues**
-
-```bash
-# Phase 4 comprehensive testing framework
-npm run test:debug       # Debug test failures
-npm run test:coverage    # Generate coverage reports
-npm run test:watch       # Watch mode for development
-npm run test:sportradar  # Test SportRadar integration
-```
-
 ---
-
-## 📚 **Documentation**
-
-### **Comprehensive Guides**
-
-- **📖 [Ultimate Money Maker Documentation](frontend/ULTIMATE_MONEY_MAKER_DOCS.md)** - Complete feature guide with quantum AI explanations
-- **🏗️ [Betting Component Standards](frontend/BETTING_COMPONENT_STANDARDS.md)** - Development standards and architecture patterns
-- **📝 [Changelog](frontend/CHANGELOG.md)** - Version history with detailed feature tracking
-- **🎯 [Feature Documentation](frontend/FEATURE_DOCUMENTATION.md)** - Comprehensive feature guide and technical reference
-- **🧪 [Testing Documentation](frontend/TESTING_DOCUMENTATION.md)** - Complete testing framework guide
-- **⚡ [Performance Guide](frontend/PERFORMANCE_GUIDE.md)** - Optimization best practices
-- **📊 [SportRadar Integration Guide](docs/SPORTRADAR_INTEGRATION.md)** - Complete API integration documentation
-
-### **API Reference**
-
-- **SportRadar API Integration** - 19 professional APIs with smart quota management
-- **Performance Optimization Service** - LRU caching and memory management
-- **Quantum AI Engine** - Superposition state analysis and neural networks
-- **Monitoring Dashboard** - Real-time system health and performance tracking
-- **Analytics Suite** - Statistical modeling and predictive insights
-
+## 📄 License and Attribution
 ---
-
-## 🤝 **Contributing**
-
-### **Getting Started**
-
-1. Fork the repository
-2. Clone: `git clone https://github.com/yourusername/A1Betting7-13.2.git`
-3. Create branch: `git checkout -b feature/amazing-feature`
-4. Follow TypeScript and ESLint standards in `BETTING_COMPONENT_STANDARDS.md`
-5. Test with comprehensive testing framework (90%+ coverage required)
-6. Submit PR with detailed description
-
-### **Priority Areas**
-
-- 🎯 **SportRadar Enhancement** - Extend API coverage and optimize data processing
-- 🤖 **Neural Network Models** - Improve ensemble predictions
-- 📊 **Advanced Analytics** - New statistical modeling features
-- 📱 **Mobile Experience** - PWA enhancements with virtual scrolling
-- 🔧 **Performance** - Speed optimizations and monitoring improvements
-- 🧪 **Testing Coverage** - Expand test scenarios and edge cases
-
+This project is licensed under the MIT License.
+See LICENSE file for details.
 ---
-
-## 📄 **License**
-
-**MIT License** - See [LICENSE](LICENSE) file for details.
-
-Free and open source forever. Build businesses, customize freely, and share with teams.
-
-### **Usage Rights**
-
-- ✅ Commercial use and monetization
-- ✅ Modification and customization
-- ✅ Distribution and sharing
-- ✅ Private use and development
-
----
-
-## 🏆 **Why Choose A1Betting**
-
-### **💰 Economic Benefits**
-
-```
-PropFinder Subscription: $29-49/month ($348-588/year)
-A1Betting Cost: $0 forever
-Features: Superior with SportRadar + Advanced AI + Performance Optimization + Enterprise Testing
-Support: Open source community + comprehensive documentation
-Customization: Unlimited with development standards
-Performance: 15x faster with React 19 + Virtual Scrolling
-Data: Official SportRadar APIs vs. limited data sources
-```
-
-### **⚡ Performance Superiority**
-
-```
-Load Time:       PropFinder 3.2s  →  A1Betting 0.3s (10x faster)
-Search Speed:    PropFinder 1.8s  →  A1Betting 0.1s (18x faster)
-Data Handling:   PropFinder 1,000 →  A1Betting 10,000+ props
-AI Analysis:     PropFinder None  →  A1Betting Advanced AI
-Risk Management: PropFinder Basic →  A1Betting Kelly + Advanced Optimization
-Testing:         PropFinder None  →  A1Betting Enterprise Framework (90%+ coverage)
-Documentation:   PropFinder Limited → A1Betting 200+ pages
-Memory Usage:    PropFinder High  →  A1Betting Optimized (<50MB)
-Data Source:     PropFinder Unknown → A1Betting SportRadar (19 APIs)
-```
-
-### **🔧 Technical Advantages**
-
-- **Official SportRadar Integration**: 19 professional APIs with intelligent quota management
-- **Advanced AI Engine**: Sophisticated prediction modeling with quantum-inspired algorithms
-- **Virtual Scrolling**: Handle unlimited datasets with smooth 60fps performance
-- **React 19 Concurrent**: Latest features for optimal user experience
-- **Comprehensive Testing**: Enterprise-grade testing framework with 90%+ coverage
-- **Performance Optimization**: Sub-300ms load times with advanced caching
-- **Type Safety**: Full TypeScript coverage with strict standards
-- **Privacy**: Local AI processing with no data tracking
-- **Extensibility**: Full source code access with development standards
-
----
-
-## 🚀 **Quick Health Check**
-
-```bash
-# Frontend: http://localhost:5173
-# Backend: http://localhost:8000/health
-# API Docs: http://localhost:8000/docs
-# Performance Dashboard: http://localhost:5173/monitoring
-# System Testing: http://localhost:5173/testing
-# Documentation Hub: http://localhost:5173/docs
-# SportRadar Status: http://localhost:8000/api/v1/sportradar/health
-# SportRadar Dashboard: http://localhost:5173/sportradar
-```
-
----
-
-**🎯 Stop paying for PropFinder. Get advanced AI analysis with official SportRadar data, superior performance, comprehensive testing, and enterprise-grade features - completely free.**
-
-_Built with ❤️ by the open source community. Empowering bettors worldwide with advanced AI technology, official sports data, and PropFinder-level analytics._
-
----
-
-**🔴 LIVE STATUS**: Production-ready with SportRadar integration, enhanced error handling, and cloud deployment optimization - Full functionality with 96% launch readiness
-
-**📊 SPORTRADAR STATUS**: 19 APIs integrated with intelligent quota management, automatic rate limiting, and cloud fallback support
-
-**🧪 TESTING STATUS**: Phase 4 comprehensive testing framework active with 90%+ unit coverage, 85%+ integration coverage, and 100% user journey validation through 40+ E2E test scenarios
-
-**⚡ PERFORMANCE STATUS**: Phase 4 optimization complete with React 19 concurrent features, virtual scrolling, advanced caching, and sub-300ms load times
-
-**🚀 LAUNCH STATUS**: Phase 4 launch preparation complete with system testing, documentation hub, onboarding flow, performance monitoring, and deployment readiness fully operational
-
-_Last Updated: January 2025 - Version 9.1.0 - SportRadar Integration Complete + Phase 4 Performance Optimization Complete_
